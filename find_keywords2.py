@@ -406,3 +406,4 @@ find_info('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/c
 
 eradication_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,Chemically reclaim,Rotenone,Kill,Chemical Renovation,Poisoned,Toxaphene,Repoisioning,Fish-Tox,Lethal,Manually remove,Removed,Antimycin,Chemical reclamation,Eradicate,Manually thin,Toxicant,Remove,Derris,Manual removal,Poison,Chemical,Chemically reclaim,Thin"
 find_info('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/eradication.csv', eradication_header)
+
