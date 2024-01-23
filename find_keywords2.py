@@ -5,6 +5,7 @@ import thefuzz
 from thefuzz import fuzz
 from thefuzz import process
 import re
+import pdbp
 
 
 
@@ -297,6 +298,8 @@ def find_info_stock(fileName):
     return
 
 
+
+
 def find_amt(text):
     #https://www.w3schools.com/python/python_regex.asp
    # fileName = str(fileName)
@@ -365,6 +368,67 @@ def find_info(fileName, headers):
     df.to_csv(fileName, encoding='utf-8', index = False)
     return
 
+def seperate_years(fileName):
+    pattern = r'(?:\d{1}[19]\d{2}|\d{1,2}/\d{1,2}/\d{2}|\d{1,2}/\d{2})'
+# \d{1}[19]\d{2}: Match a sequence of digits representing a four-digit number in the range from 1900 to 1999.
+# \d{1,2}/\d{1,2}/\d{2}: Dates in the format "m/d/yy" or "mm/dd/yy".
+# \d{1,2}/\d{2}: Dates in the format "m/yy" or "mm/yy".
+    df = pd.read_csv(fileName)
+    new_df = pd.DataFrame(columns=df.columns)
+
+    for index, row in df.iterrows():
+        #breakpoint()
+        contents = str(row[1])
+        #contents = strForRow.split()
+        #print("Contents: ", contents)
+        #contents = contents[1]
+        years = re.findall(pattern, contents)
+        #breakpoint()
+        contents_split = re.split(pattern, contents)
+        #print("Years:", years)
+        #print("Contents split:", contents_split)  
+        #breakpoint()  
+        if len(contents_split) == 1:
+            # breakpoint()
+            row =pd.DataFrame([row.tolist()], columns=df.columns)
+            new_df = pd.concat([new_df, row], ignore_index=True)
+            continue
+
+        for i in range(len(contents_split)):
+            new_row_data = []
+            if contents_split[i].isspace() or contents_split[i] == '.' or contents_split[i] == '-' or contents_split[i] == ';' or contents_split[i] == '. ' or contents_split[i] == '&':
+                continue
+            for j in range(len(df.columns)):
+                if j != 1 and j != 2:
+                    new_row_data.append(row[j])
+                elif j == 1:
+                    
+                    new_row_data.append(contents_split[i])
+                else: #i == 2
+                    if i < len(years):
+                        new_row_data.append(years[i])
+                    else:
+                        new_row_data.append('')
+            #print("New Row Data:", new_row_data)
+            #new_df = new_df.append(pd.DataFrame([new_row_data], columns=df.columns), ignore_index=True)
+            new_row = pd.DataFrame([new_row_data], columns=df.columns)
+            #print("Shape of df1:", new_df.shape)
+            #print("Shape of df2:", new_row.shape)
+            new_df = pd.concat([new_df, new_row], ignore_index=True)
+        #breakpoint()
+        # if len(contents_split) == 0:
+        #     new_df.append(pd.DataFrame([row], columns=df.columns), ignore_index=True)
+    new_df.to_csv('test.csv', encoding='utf-8', index = False)
+
+                
+
+
+
+    
+       
+
+
+
 
 
 
@@ -372,7 +436,7 @@ text = "1947- 1,200 1948- 3,000 1949- none planted 1950-spring 3000 (A), fall 21
 sentence = "In the year 1900, the population was 1,900, and the ratio was 7/34."
 text = """ 4. Stocked 2,431 fingerling walleyes  " 14,999 11 " 7/74  11 880 " 11 7/77  " 2,500 " " 7/76 """
 ##text = """ 1. (Cont'd) 7,800 - 1949;2200 -1950;  5000 - 1951;10,000 - 1952 ; 5000 -  1953 . Good returns.  Lake biologically inventoried in  summer of 1953. Rainbow trout taken  in nets.  3, 4. Lake stocked annually with  5,000 legal rainbow. Planted  in 2 groups (1957-1962)--4,000  in spring, 1, 000 in fall. 1956  plant was only 1, 000 fall-planted  trout. """
-matches = find_amt(text)
+#matches = find_amt(text)
 
    # print(f"Number: {number}")
 #print(matches)
@@ -393,6 +457,7 @@ for files in os.listdir(path_of_directory):
 
 #find_no_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
 #find_info_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
+find_info_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/test.csv')
 
 
 #Stocking headers - 'LAKE NAME',CONTENTS',DATE',FUZZY MATCH',NO,Stage,Num,Species,"Trout, trout","Perch, perch","Rock Bass, rock bass","Walleye, walleye","Smallmouth Bass, smallmouth bass","Pike, pike","Suckers, suckers","Largemouth Bass, largemouth bass","Bluegill, bluegill","Bass, bass","Green Sunfish, green sunfish","Bullheads, bullheads","Pumpkinseed Sunfish, pumpkinseed sunfish","Rainbows, rainbows","Brook trout, brook trout","Pike, pike.1","Panfish, panfish","Grayling, grayling","Trash, trash","Black Spotted Trout, black spotted trout","Montana grayling, montana grayling","Chubs, chubs","Browns, browns","Hybrid Sunfish, hybrid sunfish","Sea Lamprey, sea lamprey","Splake, splake","Salmonid, salmonid","Common Shiners, common shiners","Tiger Muskies, tiger muskies","Whitefish, whitefish","Ichthyomyzon, ichthyomyzon","Brown trout, brown trout","Menominees, menominees","Sturgeon, sturgeon"
@@ -402,8 +467,9 @@ habitat_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,Install,Phosphate,Fertiliz
 
 
 reg_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,Remove size restriction,Acquire public fishing site,Prohibit use of live minnows for bait,Commercial fisherman to trap net,Discontinue commercial trap netting,Remove size limit,Open to fishing,Acquire land for public access,Opened,Remove all restrictions,Commercial minnow seining,Restriction,Site,Bait,Fishermen,Netting,Limit,Seining,Access,Fishing"
-find_info('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/regulation.csv', reg_header)
+#find_info('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/regulation.csv', reg_header)
 
 eradication_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,Chemically reclaim,Rotenone,Kill,Chemical Renovation,Poisoned,Toxaphene,Repoisioning,Fish-Tox,Lethal,Manually remove,Removed,Antimycin,Chemical reclamation,Eradicate,Manually thin,Toxicant,Remove,Derris,Manual removal,Poison,Chemical,Chemically reclaim,Thin"
-find_info('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/eradication.csv', eradication_header)
+#find_info('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/eradication.csv', eradication_header)
 
+#seperate_years('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
