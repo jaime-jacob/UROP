@@ -221,11 +221,13 @@ def find_no_stock(fileName):
 def find_info_stock(fileName):
     fileName = str(fileName)
     df = pd.read_csv(fileName)
-    stock_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,NO,Stage,Num,Species,Trout,Perch,Rock Bass,Walleye,Smallmouth Bass,Pike,Suckers,Largemouth Bass,Bluegill,Bass,Green Sunfish,Bullheads,Pumpkinseed Sunfish,Rainbows,Brook trout,Pike,Panfish,Grayling,Trash,Black Spotted Trout,Montana grayling,Chubs,BrownsHybrid Sunfish,Sea Lamprey,Splake,Salmonid,Common Shiners,Tiger Muskies,Whitefish,Ichthyomyzon,Brown trout,Menominees,Sturgeon"
+    stock_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,NO,Stage,Num,Species,Are_species,Trout,Perch,Rock Bass,Walleye,Smallmouth Bass,Pike,Suckers,Largemouth Bass,Bluegill,Bass,Green Sunfish,Bullheads,Pumpkinseed Sunfish,Rainbows,Brook trout,Pike,Panfish,Grayling,Trash,Black Spotted Trout,Montana grayling,Chubs,BrownsHybrid Sunfish,Sea Lamprey,Splake,Salmonid,Common Shiners,Tiger Muskies,Whitefish,Ichthyomyzon,Brown trout,Menominees,Sturgeon"
     stock_header = stock_header.split(",")
-    print(stock_header)
+    #print(stock_header)
     df.loc[:, "Species"] = ""
     df.loc[:, "Stage"] = ""
+    df.loc[:, "Are_species"] = 0
+
    # df.loc[:, "Num"] = 0
    # df.columns = stock_header
     for i in range(len(stock_header)):
@@ -233,7 +235,7 @@ def find_info_stock(fileName):
             df.loc[:, stock_header[i]] = 0
    # df.head()
 
-    stock_csv = pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
+    stock_csv = pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/test.csv')
    # return
 
 
@@ -254,9 +256,12 @@ def find_info_stock(fileName):
 
             #clmn = (stock_csv)
         clmn = df.columns.values.tolist()
+        #are_species = False
 
         if index == 5:
             index = 5
+        #are_species = False
+
         for i in range(len(clmn)):
             if i >= 7:
                 #    header = clmn[i].tolist()
@@ -265,6 +270,7 @@ def find_info_stock(fileName):
                 for item in header:
                     if item in strForRow:
                         df.at[index, clmn[i]] = 1
+                        df.at[index, 'Are_species'] = 1
                 if df.at[index, clmn[i]] != 1:
                     df.at[index, clmn[i]] = 0
                 
@@ -276,6 +282,31 @@ def find_info_stock(fileName):
                   #  species += ", "
         if species != "":
             df.at[index, 'Species'] = species
+
+        if df.at[index, 'Are_species'] == 0:
+            cur = index - 1
+            while cur >= 0:
+                #print(df.columns)
+                #print(df.loc[cur])
+                if df.at[cur, "'LAKE NAME'"] == df.at[index, "'LAKE NAME'"]:
+                    if df.at[cur, 'Are_species'] == 1: 
+                        #print(stock_csv.columns)
+                        contents = df.at[index, " 'CONTENTS'"]
+                        date = df.at[index, " 'DATE'"]
+                        #print(contents)
+                        #print("Before copying cur: \n Contents: ", contents, "| DF Row:", df.at[index, " 'CONTENTS'"])
+                        df.loc[index] = df.loc[cur]
+                        #print("Before copying cur: \n Contents: ", contents, "| DF Row:", df.at[index, " 'CONTENTS'"])
+                        df.at[index, " 'CONTENTS'"] = contents
+                        df.at[index, " 'DATE'"] = date
+                        #print("Before copying cur: \n Contents: ", contents, "| DF Row:", df.at[index, " 'CONTENTS'"])
+                        #print(df.loc[cur])
+                        #print(df.loc[index])
+                        df.at[index, 'Are_species'] = 1
+                        break
+                else:
+                    break
+                cur = cur - 1
         for word in stage_keys:
             if word in strForRow:
                 stage += (word + ", ")
@@ -328,7 +359,7 @@ def find_amt(text):
         match = int(match)
         if match > 99 and (match > 1999 or match <= 1900):
             amt += match
-            print("Match:", match, " | Amt: ",  amt)
+            #print("Match:", match, " | Amt: ",  amt)
 
          
     return amt
@@ -338,9 +369,9 @@ def find_info(fileName, headers):
     fileName = str(fileName)
     df = pd.read_csv(fileName)
     #habitat_header = list(df.columns)
-    print (headers)
+    #print (headers)
     headers = headers.split(",")
-    print(headers)
+    #print(headers)
 
   
     for i in range(len(headers)):
@@ -396,7 +427,19 @@ def seperate_years(fileName):
 
         for i in range(len(contents_split)):
             new_row_data = []
-            if contents_split[i].isspace() or contents_split[i] == '.' or contents_split[i] == '-' or contents_split[i] == ';' or contents_split[i] == '. ' or contents_split[i] == '&':
+            is_empty = False
+            try:
+                df.at[index, " 'DATE'"].isnull()
+                is_empty = True
+            except:
+                try:                    
+                    df.at[index, " 'DATE'"].isspace()
+                    is_empty = True
+                except:
+                    is_empty = False
+
+ 
+            if is_empty and (contents_split[i].isspace() or contents_split[i] == '.' or contents_split[i] == '-' or contents_split[i] == ';' or contents_split[i] == '. ' or contents_split[i] == '&'):
                 continue
             for j in range(len(df.columns)):
                 if j != 1 and j != 2:
@@ -453,11 +496,10 @@ lst = os.listdir(path_of_directory) # your directory path
 for files in os.listdir(path_of_directory):
         if files.endswith('.csv'):
             name = '/Users/jaimejacob/Documents/urop/condense_lines_proj/end_result/' + str(files)
-           # find_keywords(name)
+            #find_keywords(name)
 
 #find_no_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
 #find_info_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
-find_info_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/test.csv')
 
 
 #Stocking headers - 'LAKE NAME',CONTENTS',DATE',FUZZY MATCH',NO,Stage,Num,Species,"Trout, trout","Perch, perch","Rock Bass, rock bass","Walleye, walleye","Smallmouth Bass, smallmouth bass","Pike, pike","Suckers, suckers","Largemouth Bass, largemouth bass","Bluegill, bluegill","Bass, bass","Green Sunfish, green sunfish","Bullheads, bullheads","Pumpkinseed Sunfish, pumpkinseed sunfish","Rainbows, rainbows","Brook trout, brook trout","Pike, pike.1","Panfish, panfish","Grayling, grayling","Trash, trash","Black Spotted Trout, black spotted trout","Montana grayling, montana grayling","Chubs, chubs","Browns, browns","Hybrid Sunfish, hybrid sunfish","Sea Lamprey, sea lamprey","Splake, splake","Salmonid, salmonid","Common Shiners, common shiners","Tiger Muskies, tiger muskies","Whitefish, whitefish","Ichthyomyzon, ichthyomyzon","Brown trout, brown trout","Menominees, menominees","Sturgeon, sturgeon"
@@ -472,4 +514,5 @@ reg_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,Remove size restriction,Acquir
 eradication_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,Chemically reclaim,Rotenone,Kill,Chemical Renovation,Poisoned,Toxaphene,Repoisioning,Fish-Tox,Lethal,Manually remove,Removed,Antimycin,Chemical reclamation,Eradicate,Manually thin,Toxicant,Remove,Derris,Manual removal,Poison,Chemical,Chemically reclaim,Thin"
 #find_info('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/eradication.csv', eradication_header)
 
-#seperate_years('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
+seperate_years('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
+find_info_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/test.csv')
