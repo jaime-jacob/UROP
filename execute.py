@@ -20,7 +20,7 @@ for files in os.listdir(path_of_directory):
         if files.endswith('.csv'):
             name = '/Users/jaimejacob/Documents/urop/condense_lines_proj/end_result/' + str(files)
             # find_keywords2.find_keywords(name)
-#find_no_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
+# find_keywords2.find_no_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')
 #find_info_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
 
 
@@ -37,6 +37,7 @@ eradication_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,Chemically reclaim,Rot
 #find_info('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/eradication.csv', eradication_header)
 
 #seperate_years('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
-find_keywords2.find_info_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/test.csv')
+#find_keywords2.find_info_stock('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')
 
-
+find_keywords2.split_by_species('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')
+find_keywords2.summarize('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')

@@ -225,6 +225,7 @@ def find_info_stock(fileName):
     """Find species stocked, amount, in each line in the stocking CSV."""
 
     fileName = str(fileName)
+    find_no_stock(fileName)
     df = pd.read_csv(fileName)
     stock_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,NO,Stage,Num,Species,Are_species,Trout,Perch,Rock Bass,Walleye,Smallmouth Bass,Pike,Suckers,Largemouth Bass,Bluegill,Bass,Green Sunfish,Bullheads,Pumpkinseed Sunfish,Rainbows,Brook trout,Pike,Panfish,Grayling,Trash,Black Spotted Trout,Montana grayling,Chubs,BrownsHybrid Sunfish,Sea Lamprey,Splake,Salmonid,Common Shiners,Tiger Muskies,Whitefish,Ichthyomyzon,Brown trout,Menominees,Sturgeon,Salmon"
     stock_header = stock_header.split(",")
@@ -422,12 +423,63 @@ def seperate_years(fileName):
         # if len(contents_split) == 0:
         # new_df.append(pd.DataFrame([row], columns=df.columns), ignore_index=True)
     new_df.to_csv('test.csv', encoding='utf-8', index = False)
+    
+def split_by_species(fileName):
+    df = pd.read_csv(fileName)
+    new_df = pd.DataFrame(columns=df.columns)
 
-# Test strings
-# text = "1947- 1,200 1948- 3,000 1949- none planted 1950-spring 3000 (A), fall 2100 (A)"
-# sentence = "In the year 1900, the population was 1,900, and the ratio was 7/34."
-# text = """ 4. Stocked 2,431 fingerling walleyes  " 14,999 11 " 7/74  11 880 " 11 7/77  " 2,500 " " 7/76 """
-# text = """ 1. (Cont'd) 7,800 - 1949;2200 -1950;  5000 - 1951;10,000 - 1952 ; 5000 -  1953 . Good returns.  Lake biologically inventoried in  summer of 1953. Rainbow trout taken  in nets.  3, 4. Lake stocked annually with  5,000 legal rainbow. Planted  in 2 groups (1957-1962)--4,000  in spring, 1, 000 in fall. 1956  plant was only 1, 000 fall-planted  trout. """
-# matches = find_amt(text)
-# print(f"Number: {number}")
-# print(matches)
+    species_keys = pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/keyword_csvs/keys_species.csv')
+    species_keys = species_keys['Words'].tolist()
+
+    for index, row in df.iterrows():
+        contents = str(row[1])
+        new_contents = []
+        contents = re.split(" ", contents)
+        current_string = ""
+        for word in contents:
+            if word in species_keys:
+                current_string += (" " + word)
+                new_contents.append(current_string)
+                current_string = ""
+            else:
+                current_string += (" " + word)
+        if current_string != "":
+            new_contents.append(current_string)
+        # print("NEW CONTENTS:", new_contents)
+
+        for i in range(len(new_contents)):
+            new_row_data = []
+            for j in range(len(df.columns)):
+                new_row_data.append(row[j])
+                if j == 1:
+                    new_row_data[j] = new_contents[i]
+            new_row = pd.DataFrame([new_row_data], columns=df.columns)
+            if new_row['NO'][0] == 1:
+                continue
+            new_df = pd.concat([new_df, new_row], ignore_index=True)
+    
+    new_df.to_csv(fileName, encoding='utf-8', index = False)
+
+    file_path = os.path.join(os.getcwd(), fileName)
+
+    find_info_stock(file_path)
+    
+def summarize(fileName):
+    df = pd.read_csv(fileName)
+
+    for col in df.columns:
+        try:
+            df[col] = pd.to_numeric(df[col])
+        except ValueError:
+            print(f"Column '{col}' contains non-numeric values that cannot be converted.")
+
+    print(df.dtypes)
+    sum_of_columns = df.sum(numeric_only=True)
+    print(sum_of_columns)
+    sum_df = pd.DataFrame(sum_of_columns).T
+    # df_sum = df.describe()
+    sum_df.to_csv('df_summary.csv', encoding='utf-8', index = False)
+
+
+# split_by_species('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')
+# summarize('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')

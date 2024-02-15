@@ -1,0 +1,13 @@
+name: creative_project
+title: creative_project
+username: 9emauh-jaime-jacob
+account: 9emauh-jaime-jacob
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10647584
+bundleId: 7978186
+url: https://9emauh-jaime-jacob.shinyapps.io/creative_project/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: cReative_pRoject.html|cReative_pRoject.Rmd
