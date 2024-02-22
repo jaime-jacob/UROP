@@ -481,5 +481,94 @@ def summarize(fileName):
     sum_df.to_csv('df_summary.csv', encoding='utf-8', index = False)
 
 
+def format_years(fileName, outputFile):
+
+    # Captures formats like '7/76' 
+    pattern1 = r'^\s*(\d{1,2})/(\d{1,2})\s*$'
+
+    # Captures formats like '7/7/76'
+    pattern2 = r'^\s*(\d{1,2})/(\d{1,2})/(\d{1,2})\s*$'
+
+    # Captures formats like '5-25'
+    pattern3 = r'^\s*(\d{1,2})-(\d{1,2})\s*$'
+
+    # Captures formats like '9-5-25'
+    pattern4 = r'^\s*(\d{1,2})-(\d{1,2})-(\d{1,2})\s*$'
+
+    # Captures formats like ' '82 '
+    pattern5 = r"^\s*'(\d{1,2})\s*$"
+
+    # Other patterns not accounted for: 71&72, Fall/1950
+    df = pd.read_csv(fileName)
+    num_exceptions = 0
+   #  print(df.columns)
+
+    for index, row in df.iterrows():
+        # print(row)
+        dates = None
+        # if index > 0:
+        #     # print("DATES at beg:", dates)
+        date = str(row[2])
+
+        # print("BEFORE:", date)
+
+        dates1 = re.search(pattern1, date)
+        dates3 = re.search(pattern3, date)
+        if dates1: 
+            dates = dates1
+        elif dates3:
+            dates = dates3
+        if dates:
+            date = dates.group(2)
+            date = '19' + str(date)
+            date = int(date)
+            # print("AFTER:", date)
+            df.at[index, "DATE"] = date
+            continue 
+
+        dates2 = re.search(pattern2, date)
+        dates4 = re.search(pattern4, date)
+        if dates2:
+            dates = dates2
+        elif dates4:
+            dates = dates4
+
+        if dates:
+            date = dates.group(3)
+            date = '19' + str(date)
+            date = int(date)
+            # print("AFTER:", date)
+            df.at[index, "DATE"] = date
+            continue 
+
+        dates5 = re.search(pattern5, date)
+
+        if dates5:
+            date = dates5.group(1)
+            date = '19' + str(date)
+            date = int(date)
+            # print("AFTER:", date)
+            df.at[index, "DATE"] = date
+            continue 
+
+        if not dates:
+            # print("NOT DATES:", row[2])
+            try:
+                if not date == 'nan':
+                    df.at[index, "DATE"] = int(row[2])
+                else: 
+                    df.at[index, "DATE"] = None
+            except:
+                # print(Exception)
+                num_exceptions = num_exceptions + 1
+           # row[2] = int(row[2])
+            # issue = 57 12/67 , 1966.0, 71&72 
+            continue
+
+    print('FILE:', fileName)
+    print('Exceptions:', num_exceptions)
+    df.to_csv(outputFile, encoding='utf-8', index = False)
+
+
 # split_by_species('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')
 # summarize('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')

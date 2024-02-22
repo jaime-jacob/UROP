@@ -1,0 +1,65 @@
+---
+title: "graphs_per_year"
+author: "Jaime Jacob"
+date: "2024-02-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Upload CSV
+
+```{r}
+
+stocking <- read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_stocking.csv")
+eradication <- read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_eradication.csv")
+regulation <- read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_regulation.csv")
+habitat_management <- read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_habitat.csv")
+
+
+plot_years <- function(file_path, name, color){
+  years <- file_path$DATE
+  contains_years <- grepl("[^0-9]", years)
+  non_numeric_indices <- !grepl("^[0-9]+$", years)
+  years[!grepl("[^0-9]", years)]
+  years[non_numeric_indices] <- NA
+  years <- na.omit(years)
+  years <- as.integer(years)
+  years <- years[(years < 2000) & (years > 1900)]
+  max(years)
+  head(years)
+  head(contains_years)
+  # title <- name + ' Years'
+  boxplot(years,
+          main = name, 
+          xlab = "Years",         
+          ylab = "Years",         
+          col = color,
+          ylim=c(1900,2000))
+   hist(years,
+     main = name,  
+     xlab = "Values",                   
+     ylab = "Frequency",              
+     col = color,                 
+     border = "black",
+    xlim = c(1900,2000)
+)
+ 
+}
+
+par(mfrow = c(2, 4))
+
+plot_years(stocking, 'Stocking', "lightblue")
+plot_years(eradication, 'Eradication', "lightpink")
+plot_years(regulation, 'Regulation', "lightgreen")
+plot_years(habitat_management, 'Habitat Management', "lightyellow")
+
+
+```
+
+```{r}
+
+```
+
