@@ -17,7 +17,6 @@ library(purrr)
 library(gridExtra)
 
 
-
 ```
 
 
@@ -29,80 +28,14 @@ library(gridExtra)
 loc_data<-read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/MGNT_lake_info.csv") %>%
   distinct(new_key, .keep_all = TRUE) %>%  # select only one row per lake since you only need whole lake information
   drop_na(LONG_DD, LAT_DD) #omit data where you don't have location information 
- 
-# Adding years of events in the lakes 
-stocking_data <- read.csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_stocking.csv')
 
-stocking_data <- read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_eradication.csv")
-
-stocking_data_new <- stocking_data[, c("LAKE.NAME","DATE")]
-
-stocking_data_new <- mutate(stocking_data_new, 
-                             county = map_chr(str_split(LAKE.NAME, "_"), 1),
-                             lakename = map_chr(str_split(LAKE.NAME, "_"), 2))
-
-
-print(colnames(stocking_data_new))
-print(colnames(loc_data))
-
-# Examine unique values in the join columns
-print(unique(stocking_data_new$lakename))
-print(unique(loc_data$lakename))
-print(unique(stocking_data_new$county))
-print(unique(loc_data$county))
-
-head(stocking_data_new)
-head(loc_data)
-
-stocking_data_new <- stocking_data_new[order(stocking_data_new$county), ]
-
-stocking_data_new$county <- trimws(stocking_data_new$county)
-stocking_data_new$county <- tolower(stocking_data_new$county)
 loc_data$county <- trimws(loc_data$county)
 loc_data$county <- tolower(loc_data$county)
 
-stocking_data_new$lakename <- trimws(stocking_data_new$lakename)
-stocking_data_new$lakename <- tolower(stocking_data_new$lakename)
 loc_data$lakename <- trimws(loc_data$lakename)
 loc_data$lakename <- tolower(loc_data$lakename)
 
-joined <- inner_join(stocking_data_new, loc_data, by = c('county', 'lakename'), relationship = "many-to-many")
-
-
-years <- joined$DATE
-contains_years <- grepl("[^0-9]", years)
-non_numeric_indices <- !grepl("^[0-9]+$", years)
-years[!grepl("[^0-9]", years)]
-years[non_numeric_indices] <- NA
-#years <- na.omit(years)
-years <- as.integer(years)
-joined$DATE <- ifelse(years < 2000 & years > 1900, years, NA)
-joined$location <- paste(joined$county, joined$lakename)
-
-counts <- table(joined$location, joined$DATE)
-counts
-
-# Convert the table to a data frame
-counts_df <- as.data.frame(counts)
-
-head(counts_df)
-# Rename the columns
-names(counts_df) <- c("location", "DATE", "occurrences")
-
-# Merge the counts with the 'joined' data frame
-joined <- merge(joined, counts_df, by = c("location", "DATE"), all.x = TRUE)
-
-
-#unique_rows <- !duplicated(joined[c("county","lakename")])
-#unique.df <- joined[unique_rows,]
-
-```
-
 ## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
 #get MI basemap 
 
 MI<-map_data("state") %>%
@@ -111,51 +44,16 @@ MI_basemap<-ggplot(data = MI) +
   geom_polygon(aes(x = long, y = lat, group = group), fill = "white", color = "black") + #this fill MI white and outline is black
   coord_fixed(1.3) 
 
-#create a map #you can change the color based on the variable by changing "colour" part
-MI_basemap + 
-  geom_point(data=joined, aes(x = LONG_DD, y = LAT_DD, colour = c(DATE))) +  #
-  labs(color="maximum depth (m)")  + #changes the labels on the legend 
-  theme_bw() #this removes the gray background 
-
-#you can also change the size of dots based on a variable by changing "size" part 
-MI_basemap + 
-  geom_point(data=joined, aes(x = LONG_DD, y = LAT_DD, size = c(occurrences))) +  #
-  labs(size="Number of Stocking Occurrenes in Lake per Year")  + #changes the labels on the legend 
-  theme_bw() #this removes the gray background 
-
-#or do both at the same time 
-MI_basemap + 
- geom_point(data=joined, aes(x = LONG_DD, y = LAT_DD, colour = c(DATE), size = c(occurrences)), alpha = 0.5) +
-  labs(color="Year of Stocking Event", size="Number of Events per Lake")  + 
-  theme_minimal()
-
-#  scale_color_gradient(low = "thistle1", high = "tomato4")
 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Code from Jaime Jacob ->
 
-Eradication 
-```{r}
-
-eradication <- read.csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_eradication.csv')
-
-
-
-
-```
-
-
-Trying to Create A Function to Do All 4 At Once
+Create A Function to Do Mapping
 ```{r}
 
 plot_strat <- function(file_path, label, color1, color2){
-  plot_matrix <- matrix(1:4, nrow = 2, ncol = 2)
 
-  layout(mat = plot.matrix)
-  par(mfrow = c(2, 2))
-  print(file_path)
-  print(label)
   df <- read.csv(file_path)
   df <- df[, c("LAKE.NAME","DATE")]
   df <- mutate(df, 
@@ -186,10 +84,14 @@ plot_strat <- function(file_path, label, color1, color2){
   
   plot_new <- MI_basemap + 
      geom_point(data=df, aes(x = LONG_DD, y = LAT_DD, colour = c(DATE), size = c(occurrences)), alpha = 0.5) +
-      labs(color="Year of Event", size="Number of Events per Lake", xlab = 'Longitude', ylab='Latitude')  + 
+      labs(color="Year of Event(s)", size="Number of Events per Lake")  + 
      ggtitle(label) + 
-    scale_colour_gradient(low = color1, high = color2) +
-      theme_bw()
+    xlab('Longitude (degrees)') + 
+    ylab('Latitude (degrees)') + 
+    scale_colour_gradient(low = color1, high = color2, limits = c(1900, 2000)) +
+    scale_size_continuous(limits = c(1, 8)) +
+      theme_minimal() +
+    theme(text = element_text(family = "Optima"))
   
   return (plot_new)
 }
@@ -206,12 +108,14 @@ file_paths = c('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywor
 labels = c('Stocking','Eradication', 'Habitat Management', 'Regulation')
 colors = c('lightblue1', 'mistyrose', 'lightyellow', 'darkseagreen1', 'midnightblue',  'red4',  'yellow4' , 'darkgreen')
 
-plot_matrix <- matrix(1:4, nrow = 2, ncol = 2)
+#plot_matrix <- matrix(1:4, nrow = 2, ncol = 2)
 
-layout(mat = plot.matrix)
-par(mfrow = c(2, 2))
+#layout(mat = plot.matrix)
+#par(mfrow = c(2, 2))
 
 #plot_strat("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_eradication.csv", 'Stocking')
+plots <- list()
+
 for (i in 1:4){
   plots[[i]] <- plot_strat(file_paths[i], labels[i], colors[i], colors[i + 4])
 }
