@@ -361,7 +361,7 @@ def find_info(fileName, headers):
     df.to_csv(fileName, encoding='utf-8', index = False)
     return
 
-def seperate_years(fileName):
+def seperate_years(fileName, output):
     """Seperate years into various lines for easier analysis of separate stocking events."""
     pattern = r'(?:\d{1}[19]\d{2}|\d{1,2}/\d{1,2}/\d{2}|\d{1,2}/\d{2})'
     # \d{1}[19]\d{2}: Match a sequence of digits representing a four-digit number in the range from 1900 to 1999.
@@ -383,7 +383,7 @@ def seperate_years(fileName):
         # breakpoint()  
         if len(contents_split) == 1:
             # breakpoint()
-            row =pd.DataFrame([row.tolist()], columns=df.columns)
+            row = pd.DataFrame([row.tolist()], columns=df.columns)
             new_df = pd.concat([new_df, row], ignore_index=True)
             continue
 
@@ -391,11 +391,11 @@ def seperate_years(fileName):
             new_row_data = []
             is_empty = False
             try:
-                df.at[index, " 'DATE'"].isnull()
+                df.at[index, "DATE"].isnull()
                 is_empty = True
             except:
                 try:                    
-                    df.at[index, " 'DATE'"].isspace()
+                    df.at[index, "DATE"].isspace()
                     is_empty = True
                 except:
                     is_empty = False
@@ -412,7 +412,7 @@ def seperate_years(fileName):
                     if i < len(years):
                         new_row_data.append(years[i])
                     else:
-                        new_row_data.append('')
+                        new_row_data.append(row[j])
             # print("New Row Data:", new_row_data)
             # new_df = new_df.append(pd.DataFrame([new_row_data], columns=df.columns), ignore_index=True)
             new_row = pd.DataFrame([new_row_data], columns=df.columns)
@@ -422,7 +422,7 @@ def seperate_years(fileName):
         # breakpoint()
         # if len(contents_split) == 0:
         # new_df.append(pd.DataFrame([row], columns=df.columns), ignore_index=True)
-    new_df.to_csv('test.csv', encoding='utf-8', index = False)
+    new_df.to_csv(output, encoding='utf-8', index = False)
     
 def split_by_species(fileName):
     df = pd.read_csv(fileName)
@@ -511,21 +511,6 @@ def format_years(fileName, outputFile):
         date = str(row[2])
 
         # print("BEFORE:", date)
-
-        dates1 = re.search(pattern1, date)
-        dates3 = re.search(pattern3, date)
-        if dates1: 
-            dates = dates1
-        elif dates3:
-            dates = dates3
-        if dates:
-            date = dates.group(2)
-            date = '19' + str(date)
-            date = int(date)
-            # print("AFTER:", date)
-            df.at[index, "DATE"] = date
-            continue 
-
         dates2 = re.search(pattern2, date)
         dates4 = re.search(pattern4, date)
         if dates2:
@@ -540,6 +525,21 @@ def format_years(fileName, outputFile):
             # print("AFTER:", date)
             df.at[index, "DATE"] = date
             continue 
+    
+        if not dates:
+            dates1 = re.search(pattern1, date)
+            dates3 = re.search(pattern3, date)
+            if dates1: 
+                dates = dates1
+            elif dates3:
+                dates = dates3
+            if dates:
+                date = dates.group(2)
+                date = '19' + str(date)
+                date = int(date)
+                # print("AFTER:", date)
+                df.at[index, "DATE"] = date
+                continue 
 
         dates5 = re.search(pattern5, date)
 
@@ -569,6 +569,27 @@ def format_years(fileName, outputFile):
     print('Exceptions:', num_exceptions)
     df.to_csv(outputFile, encoding='utf-8', index = False)
 
+def filter_stocking(fileName, outputFile):
+    df = pd.read_csv(fileName)
 
+    new_df = pd.DataFrame(columns=df.columns)
+    for index, row in df.iterrows():
+        if df.at[index, 'NO'] == 1:
+            continue 
+        # if both the date and information column is blank, do not include row
+        elif pd.isna(row['DATE']) and pd.isna(row['CONTENTS']):
+            continue
+        elif pd.isna(row['CONTENTS']):
+            continue
+        else:
+            #new_row = pd.DataFrame([new_row_data], columns=df.columns)
+            #new_df.pd.con
+            row_new = pd.DataFrame([row.tolist()], columns=df.columns)
+            new_df = pd.concat([new_df, row_new], ignore_index=True)
+            # new_df = pd.concat([new_df, df.at[index]], ignore_index=True)
+
+    new_df.to_csv(outputFile, encoding='utf-8', index = False)
+
+#seperate_years('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/test.csv', '/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/test_out.csv')
 # split_by_species('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')
 # summarize('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')

@@ -1,18 +1,4 @@
----
-title: "graphs_per_year"
-author: "Jaime Jacob"
-date: "2024-02-22"
-output: html_document
----
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-# Upload CSV
-
-```{r}
-dev.off()
 stocking <- read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_stocking.csv")
 eradication <- read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_eradication.csv")
 regulation <- read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_regulation.csv")
@@ -20,23 +6,26 @@ habitat_management <- read.csv("/Users/jaimejacob/Documents/urop/condense_lines_
 
 plot.matrix <- matrix(c(1, 3, 5, 7, 
                         2, 4, 6, 8), 
-                        nrow = 4, ncol = 2)
+                      nrow = 4, ncol = 2)
 plot.matrix
 cex.axis   <- 1.2
 col.bords  <- "gray60"
 layout(mat = plot.matrix, widths = c(1,3))
 size.point <- 1.2
 cols_mat <- c("lightblue", "lightpink", "lightgreen", "lightyellow")
-#par(oma = c(6, 4, 0, 2))
-#mar.left   <-  c(0, 2, 1.5, 2)
-#mar.right  <-  c(0, 2, 1.5, 4)
-par(mar=c(2,2,2.5,1.5))
+order_graphs <- c(7,3,5)
+par(oma = c(6, 4, 0, 2))
+mar.left   <-  c(0, 2, 1.5, 2)
+mar.right  <-  c(0, 2, 1.5, 4)
 axis.cols  <- c("white", "white", "white", "white", "black", "white", "white" ) # show on bottom row
 cex.labs <- 1.2
 main_labels = c("Stocking", "Eradication", "Regulation", "Habitat Management")
 file_paths = c(stocking, eradication, regulation, habitat_management)
 
 
+for (i in 1:4){
+  plot_box(file_paths[i], main_labels[i], cols_mat[i])
+}
 
 plot_box <- function(file_path, name, color){
   years <- file_path$DATE
@@ -58,13 +47,25 @@ plot_box <- function(file_path, name, color){
           col = color,
           ylim=c(1900,2000))
   hist(years,
-     main = name,  
-     xlab = "Values",                   
-     ylab = "Frequency",              
-     col = color,                 
-     border = "black",
-    breaks = seq(1900, 2000, by = 5)
-    )
+       main = name,  
+       xlab = "Values",                   
+       ylab = "Frequency",              
+       col = color,                 
+       border = "black",
+       breaks = seq(1900, 2000, by = 5)
+  )
+}
+
+
+plot_bar <- function(name){
+  hist(years,
+       main = name,  
+       xlab = "Values",                   
+       ylab = "Frequency",              
+       col = color,                 
+       border = "black",
+       breaks = seq(1900, 2000, by = 5)
+  )
 }
 
 
@@ -75,10 +76,3 @@ plot_box(eradication, 'Eradication', "lightpink")
 plot_box(regulation, 'Regulation', "lightgreen")
 
 plot_box(habitat_management, 'Habitat Management', "lightyellow")
-
-```
-
-```{r}
-
-```
-

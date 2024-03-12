@@ -42,6 +42,9 @@ eradication_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,Chemically reclaim,Rot
 #find_keywords2.split_by_species('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')
 #find_keywords2.summarize('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')
 
+#find_keywords2.seperate_years('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv', '/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/stocking_csvs/stocking_by_year.csv')
+find_keywords2.filter_stocking('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/stocking_csvs/stocking_by_year.csv', '/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/stocking_csvs/filtered_stocking.csv')
+find_keywords2.format_years('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/stocking_csvs/filtered_stocking.csv', '/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_stocking.csv')
 find_keywords2.format_years('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/eradication.csv', '/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_eradication.csv')
 find_keywords2.format_years('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/habitat.csv', '/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_habitat.csv')
 find_keywords2.format_years('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/regulation.csv', '/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_regulation.csv')

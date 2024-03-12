@@ -14,6 +14,7 @@ library(mapdata)
 library(tidyr)
 library(stringr)
 library(purrr)
+library(gridExtra)
 
 
 
@@ -32,11 +33,13 @@ loc_data<-read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_ke
 # Adding years of events in the lakes 
 stocking_data <- read.csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_stocking.csv')
 
+stocking_data <- read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_eradication.csv")
+
 stocking_data_new <- stocking_data[, c("LAKE.NAME","DATE")]
 
-stocking_data_new <- stocking_data_new %>%
-  mutate(county = str_split(LAKE.NAME, "_") %>% map_chr(1),
-         lakename = str_split(LAKE.NAME, "_") %>% map_chr(2))
+stocking_data_new <- mutate(stocking_data_new, 
+                             county = map_chr(str_split(LAKE.NAME, "_"), 1),
+                             lakename = map_chr(str_split(LAKE.NAME, "_"), 2))
 
 
 print(colnames(stocking_data_new))
@@ -54,39 +57,45 @@ head(loc_data)
 stocking_data_new <- stocking_data_new[order(stocking_data_new$county), ]
 
 stocking_data_new$county <- trimws(stocking_data_new$county)
-loc_data$county <- trimws(loc_data$county)
 stocking_data_new$county <- tolower(stocking_data_new$county)
+loc_data$county <- trimws(loc_data$county)
+loc_data$county <- tolower(loc_data$county)
+
 stocking_data_new$lakename <- trimws(stocking_data_new$lakename)
-loc_data$lakename <- trimws(loc_data$lakename)
 stocking_data_new$lakename <- tolower(stocking_data_new$lakename)
+loc_data$lakename <- trimws(loc_data$lakename)
 loc_data$lakename <- tolower(loc_data$lakename)
-df2 <- left_join(stocking_data_new, loc_data, 
-                 by = c('county', 'lakename'),keep = "all")
-df3 <- drop_na(full_join(stocking_data_new, loc_data))
+
 joined <- inner_join(stocking_data_new, loc_data, by = c('county', 'lakename'), relationship = "many-to-many")
 
 
 years <- joined$DATE
-  contains_years <- grepl("[^0-9]", years)
-  non_numeric_indices <- !grepl("^[0-9]+$", years)
-  years[!grepl("[^0-9]", years)]
-  years[non_numeric_indices] <- NA
-  #years <- na.omit(years)
-  years <- as.integer(years)
+contains_years <- grepl("[^0-9]", years)
+non_numeric_indices <- !grepl("^[0-9]+$", years)
+years[!grepl("[^0-9]", years)]
+years[non_numeric_indices] <- NA
+#years <- na.omit(years)
+years <- as.integer(years)
 joined$DATE <- ifelse(years < 2000 & years > 1900, years, NA)
+joined$location <- paste(joined$county, joined$lakename)
 
-counts <- table(joined$county, joined$lakename)
+counts <- table(joined$location, joined$DATE)
+counts
 
 # Convert the table to a data frame
 counts_df <- as.data.frame(counts)
 
+head(counts_df)
 # Rename the columns
-names(counts_df) <- c("county", "lakename", "occurrences")
+names(counts_df) <- c("location", "DATE", "occurrences")
 
 # Merge the counts with the 'joined' data frame
-joined <- merge(joined, counts_df, by = c("county", "lakename"), all.x = TRUE)
+joined <- merge(joined, counts_df, by = c("location", "DATE"), all.x = TRUE)
 
-head(df2)
+
+#unique_rows <- !duplicated(joined[c("county","lakename")])
+#unique.df <- joined[unique_rows,]
+
 ```
 
 ## Including Plots
@@ -110,15 +119,105 @@ MI_basemap +
 
 #you can also change the size of dots based on a variable by changing "size" part 
 MI_basemap + 
-  geom_point(data=joined, aes(x = LONG_DD, y = LAT_DD, size = c(lake_area_ha))) +  #
-  labs(size="lake area (ha)")  + #changes the labels on the legend 
+  geom_point(data=joined, aes(x = LONG_DD, y = LAT_DD, size = c(occurrences))) +  #
+  labs(size="Number of Stocking Occurrenes in Lake per Year")  + #changes the labels on the legend 
   theme_bw() #this removes the gray background 
 
 #or do both at the same time 
 MI_basemap + 
- geom_point(data=joined, aes(x = LONG_DD, y = LAT_DD, colour = c(DATE), size = c(occurrences))) +
-  labs(color="Year of Stocking Event", size="lake area (ha)")  + #changes the labels on the legend 
-  theme_bw()
+ geom_point(data=joined, aes(x = LONG_DD, y = LAT_DD, colour = c(DATE), size = c(occurrences)), alpha = 0.5) +
+  labs(color="Year of Stocking Event", size="Number of Events per Lake")  + 
+  theme_minimal()
+
+#  scale_color_gradient(low = "thistle1", high = "tomato4")
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+Eradication 
+```{r}
+
+eradication <- read.csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_eradication.csv')
+
+
+
+
+```
+
+
+Trying to Create A Function to Do All 4 At Once
+```{r}
+
+plot_strat <- function(file_path, label, color1, color2){
+  plot_matrix <- matrix(1:4, nrow = 2, ncol = 2)
+
+  layout(mat = plot.matrix)
+  par(mfrow = c(2, 2))
+  print(file_path)
+  print(label)
+  df <- read.csv(file_path)
+  df <- df[, c("LAKE.NAME","DATE")]
+  df <- mutate(df, 
+               county = map_chr(str_split(LAKE.NAME, "_"), 1),
+               lakename = map_chr(str_split(LAKE.NAME, "_"), 2))
+  
+  df$county <- trimws(df$county)
+  df$county <- tolower(df$county)
+
+  df$lakename <- trimws(df$lakename)
+  df$lakename <- tolower(df$lakename)
+
+  df <- inner_join(df, loc_data, by = c('county', 'lakename'), relationship = "many-to-many")
+  
+  years <- df$DATE
+  years[!grepl("[^0-9]", years)]
+  non_numeric_indices <- !grepl("^[0-9]+$", years)
+  years[non_numeric_indices] <- NA
+  years <- as.integer(years)
+  df$DATE <- ifelse(years < 2000 & years > 1900, years, NA)
+  
+  df$location <- paste(df$county, df$lakename)
+  counts <- table(df$location, df$DATE)
+  counts <- as.data.frame(counts)
+  names(counts) <- c("location", "DATE", "occurrences")
+  
+  df <- merge(df, counts, by = c("location", "DATE"), all.x = TRUE)
+  
+  plot_new <- MI_basemap + 
+     geom_point(data=df, aes(x = LONG_DD, y = LAT_DD, colour = c(DATE), size = c(occurrences)), alpha = 0.5) +
+      labs(color="Year of Event", size="Number of Events per Lake", xlab = 'Longitude', ylab='Latitude')  + 
+     ggtitle(label) + 
+    scale_colour_gradient(low = color1, high = color2) +
+      theme_bw()
+  
+  return (plot_new)
+}
+
+
+
+```
+
+Creating Info to Pass Into Function
+```{r}
+
+file_paths = c('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_stocking.csv', "/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_eradication.csv", "/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_habitat.csv", "/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_regulation.csv")
+
+labels = c('Stocking','Eradication', 'Habitat Management', 'Regulation')
+colors = c('lightblue1', 'mistyrose', 'lightyellow', 'darkseagreen1', 'midnightblue',  'red4',  'yellow4' , 'darkgreen')
+
+plot_matrix <- matrix(1:4, nrow = 2, ncol = 2)
+
+layout(mat = plot.matrix)
+par(mfrow = c(2, 2))
+
+#plot_strat("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_eradication.csv", 'Stocking')
+for (i in 1:4){
+  plots[[i]] <- plot_strat(file_paths[i], labels[i], colors[i], colors[i + 4])
+}
+
+grid.arrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], ncol=2, nrow =2)
+
+
+```
+
