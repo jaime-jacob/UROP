@@ -35,3 +35,4 @@ MI_basemap +
   geom_point(data=data, aes(x = LONG_DD, y = LAT_DD, colour = c(max_depth_m), size = c(lake_area_ha))) +  #
   labs(color="maximum depth (m)", size="lake area (ha)")  + #changes the labels on the legend 
   theme_bw()
+

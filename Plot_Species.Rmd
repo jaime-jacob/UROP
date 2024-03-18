@@ -1,0 +1,114 @@
+---
+title: "Plot_species"
+author: "Jaime Jacob"
+date: "2024-03-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Layout
+```{r}
+plot.matrix <- matrix(c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                        nrow = 3, ncol = 3)
+layout(mat = plot.matrix)
+par(mfrow = c(3, 3), mar = c(1, 1, 1, 1), cex.axis = 0.8, oma = c(4, 5, 4, 1) + 0.1)
+
+
+```
+
+
+
+```{r}
+plot_species <- function(name, color, title, ymax, xaxis.col, xaxis.label, yaxis.col, yaxis.label){
+#file_path <- read.csv(file_path)
+  
+species <- stocking[(stocking[name] == 1),]
+  
+# species <- stocking[stocking$name == 1,]
+years <- species$DATE
+non_numeric_indices <- !grepl("^[0-9]+$", years)
+years[!grepl("[^0-9]", years)]
+years[non_numeric_indices] <- NA
+years <- na.omit(years)
+years <- as.integer(years)
+years <- years[(years < 2000) & (years > 1900)]
+
+
+hist(years,
+     xlab = "", ylab = "", main = title,
+     col = color,                 
+     border = "black",
+    breaks = seq(1900, 2000, by = 5),
+    ylim = c(0, ymax),
+    xlim = c(1900, 2000),
+    axes = FALSE,
+    family = "Optima"
+    )
+
+   axis (side = 1,                        
+      at = c(1900, 1925, 1950, 1975, 2000),
+      labels = c("1900", "1925", "1950", "1975", "2000"), 
+      cex.axis = 1.2,
+      las = 1,
+      col = xaxis.col,
+      col.axis = xaxis.label,
+      family = "Optima")
+   
+    axis (side = 2,                        
+      at = c(0, 25, 50, 75, 100, 125, 150, 175),
+      labels = c("0", "25","50","75" ,"100","125","150","175"), 
+      cex.axis = 1.2,
+      las = 1,
+      col = yaxis.col,
+      col.axis = yaxis.label,
+      family = "Optima")
+  
+
+}
+
+
+```
+
+
+Yellow perch, walleye, bluegill, pike, trout , bass, brown trout, brook trout, rainbow trout, 
+
+```{r}
+
+stocking <- read.csv("/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/formatted_years/formatted_years_stocking.csv")
+
+names <- c("Trout", "Perch", "Bluegill", "Brown.trout", "Brook.trout", "Rainbows", "Walleye", "Pike", "Bass")
+
+titles <- c("Trout", "Yellow Perch", "Bluegill", "Brown Trout", "Brook Trout", "Rainbow Trout", "Walleye", "Pike", "Bass")
+
+ymax = c(175, 175, 175, 60, 60, 60, 100, 100, 100)
+
+colors <- c("tomato1", "orange1", "gold", "green", "royalblue1", "orchid1", "pink1", "mediumaquamarine", "lightblue")
+
+xaxis.cols  <- c("gray60", "gray60", "gray60", "gray60", "gray60", "gray60", "black", "black", "black" ) # show on bottom row
+
+xaxis.labels <- c("white", "white", "white", "white", "white", "white", "black", "black", "black" ) 
+
+yaxis.cols  <- c("black", "gray60", "gray60", "black", "gray60", "gray60", "black", "gray60", "gray60" ) # show on bottom row
+
+yaxis.labels <- c("black", "white", "white", "black", "white", "white", "black", "white", "white" ) 
+
+
+
+plots <- list()
+for (i in 1:9){
+  plot_species(names[i], colors[i], titles[i], ymax[i], xaxis.cols[i], xaxis.labels[i], yaxis.cols[i], yaxis.labels[i])
+}
+
+mtext (side = 2, text = "Frequency",
+       outer = TRUE, cex = 1, line = 3, col = "black", family = "Optima")
+mtext (side = 1, text = "Year",
+       outer = TRUE, cex = 1, line = 2, col = "black", family = "Optima")
+mtext (side = 3, text = "Distibution over Time of Species Stocked",
+       outer = TRUE, cex = 1, line = 2, col = "black", family = "Optima")
+
+```
+

@@ -13,9 +13,9 @@ from thefuzz import process
 import re
 import pdbp
 
-
+# Finding keywords in each CSV file
 def find_keywords(fileName):
-    """Original Functino to Sort the Lines into various management categroy CSVs."""
+    """Original Function to Sort the Lines into various management category CSVs."""
     
     fileName = str(fileName)
 
@@ -58,12 +58,17 @@ def find_keywords(fileName):
         max = 0
         max_word = ""
         new_row = [lakeName, strForRow, date, 0]
+        # If there is nothing in the entry, do not include it
         if len(contents) == 1 and contents[0] == 'nan':
             continue
 
+        # Check for both capitalized and all lower case versions of each keyword
         for i in range(len(eradication_keys) * 2):
             phrase = ''
 
+            # Check if there is an eradication keyword
+            # Phrase keeps track of the key word(s) that were flagged in this entry
+            # Checking the key words vs the entry so that the phrases could be longer than one word
             if i >= len(eradication_keys):
                 a = i - len(eradication_keys)
                 phrase = eradication_keys[a].lower()
@@ -75,6 +80,7 @@ def find_keywords(fileName):
                 eradication.loc[len(eradication)] = new_row
                 in_csv = True
                 in_csv_eradication = True
+        # Check for regulation keywords
         for i in range(len(regulation_keys) * 2):
             phrase = ''
 
@@ -89,6 +95,7 @@ def find_keywords(fileName):
                 regulation.loc[len(regulation)] = new_row
                 in_csv = True
                 in_csv_regulation = True
+        # Check for habitat key words
         for i in range(len(habitat_keys)): 
             phrase = ''
 
@@ -103,6 +110,7 @@ def find_keywords(fileName):
                 habitat.loc[len(habitat)] = new_row 
                 in_csv = True
                 in_csv_habitat = True
+        # Check for stocking key words
         for i in range(len(stocking_keys)):
             phrase = ''
 
@@ -127,8 +135,7 @@ def find_keywords(fileName):
                 num = contents[0]
                 contents = str(row[0])
                 new_num = contents[0]
-                # if the rows are not cooresponding, try to find matching num 
-                # will have to expand the num part bc what ab double digits 
+                # If the rows are not cooresponding, try to find matching num in Reccommendations column
                 if num != new_num:
                     found = False;
                     for row in df.iterrows():
@@ -140,8 +147,9 @@ def find_keywords(fileName):
                     if not found:
                         break
             else:
-                # fuzzy word matching
+                # Fuzzy word matching
                 # https://www.datacamp.com/tutorial/fuzzy-string-python
+                # Finds the category with the highest ratio, max starts at 0
                 new_row = [lakeName, strForRow, date, 1]
                 for word_key in eradication_keys:
                     ratio = fuzz.ratio(word_key, word)
@@ -156,11 +164,7 @@ def find_keywords(fileName):
                         category = "habitat"
                         max_word = word
                        
-                for word_key in regulation_keys:
-                    if word == "5/59.":
-                        i = 1
-                        #do smth 
-                    
+                for word_key in regulation_keys:   
                     ratio = fuzz.ratio(word_key, word)
                     if ratio > max:
                         max = ratio
@@ -174,7 +178,7 @@ def find_keywords(fileName):
                         category = "stocking"
                         max_word = word
 
-        # Threshold changes based on card from the R shiny app analysis 
+        # Threshold changes based on card from the R shiny app analysis, 100 is a placeholder 
         # https://9emauh-jaime-jacob.shinyapps.io/project/
         ratioNewRow = ['', 0, '', 0, ''] 
         if not in_csv and max >= 100:
@@ -198,6 +202,7 @@ def find_keywords(fileName):
             ratioNewRow = [max, 0, 'NA', 0, "NA"]
         ratios.loc[len(ratios)] = ratioNewRow;
 
+    # Put new categorized dataframes into CSVs
     eradication.to_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/eradication.csv', encoding='utf-8', index = False)
     habitat.to_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/habitat.csv', encoding='utf-8', index = False)
     stocking.to_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv', encoding='utf-8', index = False)
@@ -206,6 +211,8 @@ def find_keywords(fileName):
 
     # End of find keywords
 
+# Finding instances where there was not any stocking done.
+# Example of an entry that would not be included after running this function - 'No stocking this year'. 
 def find_no_stock(fileName):
     """Find termintating keywords."""
     fileName = str(fileName)
@@ -214,13 +221,14 @@ def find_no_stock(fileName):
 
     for index, row in df.iterrows():
         strForRow = str(row[1])
-        # Contents = strForRow.split()
 
         if "no" in strForRow or "not" in strForRow or "No" in strForRow or "Not" in strForRow:
             df.at[index, 'NO'] = 1
 
     df.to_csv(fileName, encoding='utf-8', index = False)
 
+# Flags species using the same mechanism as finding keywords. Species list comes from the same method that the keywords were found. 
+# Did not end up using frequency counts in final analysis.
 def find_info_stock(fileName):
     """Find species stocked, amount, in each line in the stocking CSV."""
 
@@ -229,19 +237,14 @@ def find_info_stock(fileName):
     df = pd.read_csv(fileName)
     stock_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,NO,Stage,Num,Species,Are_species,Trout,Perch,Rock Bass,Walleye,Smallmouth Bass,Pike,Suckers,Largemouth Bass,Bluegill,Bass,Green Sunfish,Bullheads,Pumpkinseed Sunfish,Rainbows,Brook trout,Pike,Panfish,Grayling,Trash,Black Spotted Trout,Montana grayling,Chubs,BrownsHybrid Sunfish,Sea Lamprey,Splake,Salmonid,Common Shiners,Tiger Muskies,Whitefish,Ichthyomyzon,Brown trout,Menominees,Sturgeon,Salmon"
     stock_header = stock_header.split(",")
-    # print(stock_header)
     df.loc[:, "Species"] = ""
     df.loc[:, "Stage"] = ""
     df.loc[:, "Are_species"] = 0
 
-   # df.loc[:, "Num"] = 0
-   # df.columns = stock_header
     for i in range(len(stock_header)):
         if i > 7:
             df.loc[:, stock_header[i]] = 0
-   # df.head()
 
-    stock_csv = pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/test.csv')
     species_keys = pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/keyword_csvs/keys_species.csv')
     species_keys = species_keys['Words'].tolist()
 
@@ -252,10 +255,7 @@ def find_info_stock(fileName):
         strForRow = str(row[1])
         species = ""
         stage = ""
-        amt = ""
-        # contents = strForRow.split()
-        # if df.at[index, 'NO'] == 0:
-        # clmn = (stock_csv)
+
         clmn = df.columns.values.tolist()
 
         for i in range(len(clmn)):
@@ -277,14 +277,9 @@ def find_info_stock(fileName):
                     if df.at[cur, 'Are_species'] == 1: 
                         contents = df.at[index, " 'CONTENTS'"]
                         date = df.at[index, " 'DATE'"]
-                        # print("Before copying cur: \n Contents: ", contents, "| DF Row:", df.at[index, " 'CONTENTS'"])
                         df.loc[index] = df.loc[cur]
-                        # print("Before copying cur: \n Contents: ", contents, "| DF Row:", df.at[index, " 'CONTENTS'"])
                         df.at[index, " 'CONTENTS'"] = contents
                         df.at[index, " 'DATE'"] = date
-                        # print("Before copying cur: \n Contents: ", contents, "| DF Row:", df.at[index, " 'CONTENTS'"])
-                        # print(df.loc[cur])
-                        # print(df.loc[index])
                         df.at[index, 'Are_species'] = 1
                         break
                 else:
@@ -293,24 +288,18 @@ def find_info_stock(fileName):
         for word in stage_keys:
             if word in strForRow:
                 stage += (word + ", ")
-                  #  species += ", "
         if stage != "":
             df.at[index, 'Stage'] = stage
-            
-           # contents = strForRow.split()
-           # for word in contents:
-             #   if word.isnumeric():
-             #       amt += (word + ",")
-            #if amt != 0:
+
         df.at[index, 'Num'] = find_amt(strForRow)
     df.to_csv(fileName, encoding='utf-8', index = False)
     return
 
+# Did not end up using frequency counts in final analysis. 
 def find_amt(text):
     """Find quantities of fish stocked per line."""
     # https://www.w3schools.com/python/python_regex.asp
     # fileName = str(fileName)
-    # df = pd.read_csv(fileName)    
     # Regular expression pattern to match different number formats
     pattern = r'\d+(?:,\d+)?|\d+/\d+'
     # \d+: match 1+ ints
@@ -327,17 +316,16 @@ def find_amt(text):
         match = int(match)
         if match > 99 and (match > 1999 or match <= 1900):
             amt += match
-            # print("Match:", match, " | Amt: ",  amt)
     return amt
 
+
+# Pulls out information based upon the keywords for each category. 
+# Keywords predetermined via manual QAQC as described for find_keywords function.
 def find_info(fileName, headers):
     """Generalized find information function."""
     fileName = str(fileName)
     df = pd.read_csv(fileName)
-    # habitat_header = list(df.columns)
-    # print (headers)
     headers = headers.split(",")
-    # print(headers)
 
     for i in range(len(headers)):
         if i > 4:
@@ -370,23 +358,20 @@ def seperate_years(fileName, output):
     df = pd.read_csv(fileName)
     new_df = pd.DataFrame(columns=df.columns)
 
+    # Iterate through rows and find instances of the RegEx pattern
     for index, row in df.iterrows():
         contents = str(row[1])
-        # contents = strForRow.split()
-        # print("Contents: ", contents)
-        # contents = contents[1]
         years = re.findall(pattern, contents)
-        # breakpoint()
+        # Split based upon instances of years found 
         contents_split = re.split(pattern, contents)
-        # print("Years:", years)
-        # print("Contents split:", contents_split)  
-        # breakpoint()  
+
+        # No years
         if len(contents_split) == 1:
-            # breakpoint()
             row = pd.DataFrame([row.tolist()], columns=df.columns)
             new_df = pd.concat([new_df, row], ignore_index=True)
             continue
 
+        # Check for empty cells in Date field
         for i in range(len(contents_split)):
             new_row_data = []
             is_empty = False
@@ -400,8 +385,11 @@ def seperate_years(fileName, output):
                 except:
                     is_empty = False
  
+            # If date is empty, and there is no content in the content cell, discard entry
             if is_empty and (contents_split[i].isspace() or contents_split[i] == '.' or contents_split[i] == '-' or contents_split[i] == ';' or contents_split[i] == '. ' or contents_split[i] == '&'):
                 continue
+
+            # Iterate through rows and appedn to new dataframe split by years
             for j in range(len(df.columns)):
                 if j != 1 and j != 2:
                     new_row_data.append(row[j])
@@ -413,17 +401,13 @@ def seperate_years(fileName, output):
                         new_row_data.append(years[i])
                     else:
                         new_row_data.append(row[j])
-            # print("New Row Data:", new_row_data)
-            # new_df = new_df.append(pd.DataFrame([new_row_data], columns=df.columns), ignore_index=True)
+
             new_row = pd.DataFrame([new_row_data], columns=df.columns)
-            # print("Shape of df1:", new_df.shape)
-            # print("Shape of df2:", new_row.shape)
             new_df = pd.concat([new_df, new_row], ignore_index=True)
-        # breakpoint()
-        # if len(contents_split) == 0:
-        # new_df.append(pd.DataFrame([row], columns=df.columns), ignore_index=True)
+
     new_df.to_csv(output, encoding='utf-8', index = False)
     
+# Split by Species Functino - Did not end up using this in final analysis to get species count. 
 def split_by_species(fileName):
     df = pd.read_csv(fileName)
     new_df = pd.DataFrame(columns=df.columns)
@@ -464,6 +448,7 @@ def split_by_species(fileName):
 
     find_info_stock(file_path)
     
+# Finds sum of count columns to find counts on instances of various events
 def summarize(fileName):
     df = pd.read_csv(fileName)
 
@@ -480,7 +465,7 @@ def summarize(fileName):
     # df_sum = df.describe()
     sum_df.to_csv('df_summary.csv', encoding='utf-8', index = False)
 
-
+# Formatting years in the CSV files for analysis in R
 def format_years(fileName, outputFile):
 
     # Captures formats like '7/76' 
@@ -501,16 +486,12 @@ def format_years(fileName, outputFile):
     # Other patterns not accounted for: 71&72, Fall/1950
     df = pd.read_csv(fileName)
     num_exceptions = 0
-   #  print(df.columns)
 
+    # Looks for dates in the entry, uses that as the DATE column
     for index, row in df.iterrows():
-        # print(row)
         dates = None
-        # if index > 0:
-        #     # print("DATES at beg:", dates)
         date = str(row[2])
 
-        # print("BEFORE:", date)
         dates2 = re.search(pattern2, date)
         dates4 = re.search(pattern4, date)
         if dates2:
@@ -522,7 +503,6 @@ def format_years(fileName, outputFile):
             date = dates.group(3)
             date = '19' + str(date)
             date = int(date)
-            # print("AFTER:", date)
             df.at[index, "DATE"] = date
             continue 
     
@@ -552,23 +532,21 @@ def format_years(fileName, outputFile):
             continue 
 
         if not dates:
-            # print("NOT DATES:", row[2])
             try:
                 if not date == 'nan':
                     df.at[index, "DATE"] = int(row[2])
                 else: 
                     df.at[index, "DATE"] = None
             except:
-                # print(Exception)
                 num_exceptions = num_exceptions + 1
-           # row[2] = int(row[2])
-            # issue = 57 12/67 , 1966.0, 71&72 
             continue
 
     print('FILE:', fileName)
+    # Num exceptions are instances where the date column does not follow any of the formats specified 
     print('Exceptions:', num_exceptions)
     df.to_csv(outputFile, encoding='utf-8', index = False)
 
+# Discards instances in the stocking CSV where the negative keywords are present indicating no stocking was completed
 def filter_stocking(fileName, outputFile):
     df = pd.read_csv(fileName)
 
@@ -589,7 +567,3 @@ def filter_stocking(fileName, outputFile):
             # new_df = pd.concat([new_df, df.at[index]], ignore_index=True)
 
     new_df.to_csv(outputFile, encoding='utf-8', index = False)
-
-#seperate_years('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/test.csv', '/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/test_out.csv')
-# split_by_species('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')
-# summarize('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/split_by_species.csv')

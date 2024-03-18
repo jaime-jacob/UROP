@@ -30,7 +30,7 @@ cols_mat <- c("lightblue", "lightpink", "lightgreen", "lightyellow")
 #par(oma = c(6, 4, 0, 2))
 #mar.left   <-  c(0, 2, 1.5, 2)
 #mar.right  <-  c(0, 2, 1.5, 4)
-par(mar=c(2,2,2.5,1.5))
+par(mar=c(1,0,2,2), family = "Optima", oma = c(4,5,4,4))
 axis.cols  <- c("white", "white", "white", "white", "black", "white", "white" ) # show on bottom row
 cex.labs <- 1.2
 main_labels = c("Stocking", "Eradication", "Regulation", "Habitat Management")
@@ -38,7 +38,7 @@ file_paths = c(stocking, eradication, regulation, habitat_management)
 
 
 
-plot_box <- function(file_path, name, color){
+plot_box <- function(file_path, name, color, xaxis.col, xaxis.label, yaxis.col, yaxis.label){
   years <- file_path$DATE
   contains_years <- grepl("[^0-9]", years)
   non_numeric_indices <- !grepl("^[0-9]+$", years)
@@ -52,33 +52,85 @@ plot_box <- function(file_path, name, color){
   head(contains_years)
   # title <- name + ' Years'
   boxplot(years,
-          main = name, 
-          xlab = "Years",         
-          ylab = "Years",         
+          main = "", 
+          xlab = "",         
+          ylab = name,         
           col = color,
-          ylim=c(1900,2000))
+          ylim=c(1900,2000),
+          family = "Optima",
+          horizontal=TRUE,
+          axes=FALSE)
+  
+   axis (side = 1,                        
+      at = c(1900, 1925, 1950, 1975, 2000),
+      labels = c("1900", "1925", "1950", "1975", "2000"), 
+      cex.axis = 1.2,
+      las = 1,
+      col = xaxis.col,
+      col.axis = xaxis.label,
+      family = "Optima")
+   
+         mtext (side = 3, text = name,
+       outer = FALSE, cex = 0.8, col = "black", adj = 0, line = -0.55,family = "Optima")
+   
   hist(years,
-     main = name,  
-     xlab = "Values",                   
-     ylab = "Frequency",              
+     main = "",  
+     xlab = "",                   
+     ylab = "",              
      col = color,                 
      border = "black",
-    breaks = seq(1900, 2000, by = 5)
+    breaks = seq(1900, 2000, by = 5), 
+    family = "Optima",
+    axes = FALSE
     )
+  
+     axis (side = 1,                        
+      at = c(1900, 1925, 1950, 1975, 2000),
+      labels = c("1900", "1925", "1950", "1975", "2000"), 
+      cex.axis = 1.2,
+      las = 1,
+      col = xaxis.col,
+      col.axis = xaxis.label,
+      family = "Optima")
+     
+      axis (side = 4,                        
+      at = c(0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600),
+      labels = c("0", "50", "100", "150", "200", "250", "300", "350", "400", "450", "500", "550", "600"), 
+      cex.axis = 1.2,
+      las = 1,
+      col = "black",
+      col.axis = "black",
+      family = "Optima")
+      
+
+
+
+  
 }
 
-
-plot_box(stocking, 'Stocking', "lightblue")
-
-plot_box(eradication, 'Eradication', "lightpink")
-
-plot_box(regulation, 'Regulation', "lightgreen")
-
-plot_box(habitat_management, 'Habitat Management', "lightyellow")
 
 ```
 
 ```{r}
+
+col.axes  <- c("gray60", "white", "black") 
+
+
+plot_box(stocking, 'Stocking', "lightblue", col.axes[1], col.axes[2])
+
+plot_box(eradication, 'Eradication', "lightpink", col.axes[1], col.axes[2])
+
+plot_box(regulation, 'Regulation', "lightgreen", col.axes[1], col.axes[2])
+
+plot_box(habitat_management, 'Habitat Management', "lightyellow", col.axes[3], col.axes[3])
+
+mtext (side = 4, text = "Frequency",
+       outer = TRUE, cex = 1, line = 2, col = "black", family = "Optima")
+mtext (side = 1, text = "Year",
+       outer = TRUE, cex = 1, line = 2, col = "black", family = "Optima")
+mtext (side = 3, text = "Distibution over Time of Management Strategies",
+       outer = TRUE, cex = 1, line = 2, col = "black", family = "Optima")
+
 
 ```
 
