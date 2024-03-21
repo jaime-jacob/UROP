@@ -5,22 +5,20 @@ Jaime Jacob
 """
 
 import pandas as pd
-import csv
 import os
-import thefuzz
 from thefuzz import fuzz
-from thefuzz import process
 import re
-import pdbp
 
 # Finding keywords in each CSV file
 def find_keywords(fileName):
     """Original Function to Sort the Lines into various management category CSVs."""
     
-    fileName = str(fileName)
+    fileName = str(fileName) # Ensure filename is a string
 
     # The Keys for each CSV come from the manual list created from going through CSVs
-    df = pd.read_csv(fileName)
+    df = pd.read_csv(fileName) # use Pandas dataframe to do categorizing
+
+    # Put each file into a respective dataframe for analysis to make keyword CSVs to compare 
     regulation_keys = pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/keyword_csvs/keys_regulation.csv')
     regulation_keys = regulation_keys['Words'].tolist()
 
@@ -33,23 +31,28 @@ def find_keywords(fileName):
     stocking_keys = pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/keyword_csvs/keys_stocking.csv')
     stocking_keys = stocking_keys['Words'].tolist()
 
+    # Pull the management CSVs and put them into dataframes to append entries
     eradication =   pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/eradication.csv')
     habitat =       pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/habitat.csv')
     regulation =    pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/regulation.csv')
     stocking =      pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/current/stocking.csv')
     ratios =        pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/find_keywords2/ratio_csvs/ratio_100.csv')
 
+    # Find the lakename of the file 
     lakeName = fileName.split("/")
     lakeName = str(lakeName[len(lakeName) - 1])
 
     # Iterate through each card, check for key words to organize each line
     for index, row in df.iterrows():
-        strForRow = str(row[3])
-        contents = strForRow.split()
-        date = str(row[5])
-        in_rec = False
-        in_csv = False
-        in_csv_eradication = False
+        strForRow = str(row[3]) # Records Column
+        contents = strForRow.split() # Split entry by each word per whitespace
+        date = str(row[5]) # Date Column
+
+        # Variables to track different conditions
+        in_rec = False # In reccomendations column
+        in_csv = False # Entry has been added to a management CSV
+        # Which CSV it has been added to
+        in_csv_eradication = False 
         in_csv_regulation  = False
         in_csv_stocking    = False
         in_csv_habitat     = False
@@ -57,26 +60,27 @@ def find_keywords(fileName):
         category = ""
         max = 0
         max_word = ""
-        new_row = [lakeName, strForRow, date, 0]
+        new_row = [lakeName, strForRow, date, 0] # Empty row to modify to append to management CSVs
         # If there is nothing in the entry, do not include it
         if len(contents) == 1 and contents[0] == 'nan':
             continue
 
         # Check for both capitalized and all lower case versions of each keyword
         for i in range(len(eradication_keys) * 2):
-            phrase = ''
+            phrase = '' # Eradication keyword
 
             # Check if there is an eradication keyword
             # Phrase keeps track of the key word(s) that were flagged in this entry
             # Checking the key words vs the entry so that the phrases could be longer than one word
             if i >= len(eradication_keys):
                 a = i - len(eradication_keys)
-                phrase = eradication_keys[a].lower()
+                phrase = eradication_keys[a].lower()  # lowercase
             else:
                 a = i
-                phrase = eradication_keys[a]
+                phrase = eradication_keys[a] # Capitalized 
                 
-            if phrase in strForRow and not in_csv_eradication:
+            if phrase in strForRow and not in_csv_eradication: # do not append if already in csv
+                # Add new row to eradication CSV
                 eradication.loc[len(eradication)] = new_row
                 in_csv = True
                 in_csv_eradication = True
@@ -86,12 +90,13 @@ def find_keywords(fileName):
 
             if i >= len(regulation_keys):
                 a = i - len(regulation_keys)
-                phrase = regulation_keys[a].lower()
+                phrase = regulation_keys[a].lower() # lowercase
             else:
                 a = i
                 phrase = regulation_keys[a]
 
-            if phrase in strForRow and not in_csv_regulation:
+            if phrase in strForRow and not in_csv_regulation: # do not append if already in csv
+                # Add new row to regulation CSV
                 regulation.loc[len(regulation)] = new_row
                 in_csv = True
                 in_csv_regulation = True
@@ -101,12 +106,13 @@ def find_keywords(fileName):
 
             if i >= len(habitat_keys):
                 a = i - len(habitat_keys)
-                phrase = habitat_keys[a].lower()
+                phrase = habitat_keys[a].lower() # lowercase 
             else:
                 a = i
                 phrase = habitat_keys[a]
 
-            if phrase in strForRow and not in_csv_habitat:
+            if phrase in strForRow and not in_csv_habitat: # do not append if already in csv
+                # Add new row to habitat CSV
                 habitat.loc[len(habitat)] = new_row 
                 in_csv = True
                 in_csv_habitat = True
@@ -116,13 +122,14 @@ def find_keywords(fileName):
 
             if i >= len(stocking_keys):
                 a = i - len(stocking_keys)
-                phrase = stocking_keys[a].lower()
+                phrase = stocking_keys[a].lower() # lowercase
             else:
                 a = i
                 phrase = eradication_keys[a]
             
             phrase = stocking_keys[i]
-            if phrase in strForRow and not in_csv_stocking:
+            if phrase in strForRow and not in_csv_stocking: # do not append if already in csv
+                # Add to stocking CSV
                 stocking.loc[len(stocking)] = new_row
                 in_csv = True
                 in_csv_stocking = True
@@ -149,6 +156,7 @@ def find_keywords(fileName):
             else:
                 # Fuzzy word matching
                 # https://www.datacamp.com/tutorial/fuzzy-string-python
+                # https://pypi.org/project/thefuzz/
                 # Finds the category with the highest ratio, max starts at 0
                 new_row = [lakeName, strForRow, date, 1]
                 for word_key in eradication_keys:
@@ -228,29 +236,34 @@ def find_no_stock(fileName):
     df.to_csv(fileName, encoding='utf-8', index = False)
 
 # Flags species using the same mechanism as finding keywords. Species list comes from the same method that the keywords were found. 
-# Did not end up using frequency counts in final analysis.
 def find_info_stock(fileName):
     """Find species stocked, amount, in each line in the stocking CSV."""
 
     fileName = str(fileName)
-    find_no_stock(fileName)
-    df = pd.read_csv(fileName)
+    find_no_stock(fileName) # Make sure to mark where there was no stocking done 
+    df = pd.read_csv(fileName) # Create dataframe to modify
+    # Colum Names - include all of the keyword species pulled out from the manual QAQC
     stock_header = "LAKE NAME,CONTENTS,DATE,FUZZY MATCH,NO,Stage,Num,Species,Are_species,Trout,Perch,Rock Bass,Walleye,Smallmouth Bass,Pike,Suckers,Largemouth Bass,Bluegill,Bass,Green Sunfish,Bullheads,Pumpkinseed Sunfish,Rainbows,Brook trout,Pike,Panfish,Grayling,Trash,Black Spotted Trout,Montana grayling,Chubs,BrownsHybrid Sunfish,Sea Lamprey,Splake,Salmonid,Common Shiners,Tiger Muskies,Whitefish,Ichthyomyzon,Brown trout,Menominees,Sturgeon,Salmon"
-    stock_header = stock_header.split(",")
-    df.loc[:, "Species"] = ""
-    df.loc[:, "Stage"] = ""
-    df.loc[:, "Are_species"] = 0
+    stock_header = stock_header.split(",") # create a list of headers
+    df.loc[:, "Species"] = "" # set column to standard null value
+    df.loc[:, "Stage"] = "" # set column to standard null value
+    df.loc[:, "Are_species"] = 0 # set column to standard null value
 
+    # set species column to standard null value
     for i in range(len(stock_header)):
         if i > 7:
             df.loc[:, stock_header[i]] = 0
 
+    # Pull species keys and create a list
     species_keys = pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/keyword_csvs/keys_species.csv')
     species_keys = species_keys['Words'].tolist()
 
+    # Pull stage keys and create a list
+    # Stage refers to stage in development, EX. fingerling, adult, etc
     stage_keys = pd.read_csv('/Users/jaimejacob/Documents/urop/condense_lines_proj/keyword_csvs/keys_stage.csv')
     stage_keys = stage_keys['Words'].tolist()
 
+    # Iterate through each row in dataframe to find species & stage
     for index, row in df.iterrows():
         strForRow = str(row[1])
         species = ""
@@ -260,7 +273,9 @@ def find_info_stock(fileName):
 
         for i in range(len(clmn)):
             if i >= 7:
-                header = [clmn[i], clmn[i].lower()]
+                header = [clmn[i], clmn[i].lower()] # to check for capitalized and all lower case
+
+                # check if keyword in the contents of the entry 
                 for item in header:
                     if item in strForRow:
                         df.at[index, clmn[i]] = 1
@@ -270,6 +285,7 @@ def find_info_stock(fileName):
         if species != "":
             df.at[index, 'Species'] = species
 
+        # If no species, look to entry above and copy contents, due to the dates possibly being seperated and thus the species not explicitly recorded
         if df.at[index, 'Are_species'] == 0:
             cur = index - 1
             while cur >= 0:
@@ -295,7 +311,8 @@ def find_info_stock(fileName):
     df.to_csv(fileName, encoding='utf-8', index = False)
     return
 
-# Did not end up using frequency counts in final analysis. 
+# Did not end up using number of fish stocked in final analysis. 
+# This function was not used in final analysis.
 def find_amt(text):
     """Find quantities of fish stocked per line."""
     # https://www.w3schools.com/python/python_regex.asp
@@ -339,7 +356,7 @@ def find_info(fileName, headers):
         for i in range(len(clmn)):
             if i >= 4:
 
-                header = [clmn[i], clmn[i].lower()]
+                header = [clmn[i], clmn[i].lower()] # check for capitalized and lowercase 
                 for item in header:
                     if item in strForRow:
                         df.at[index, clmn[i]] = 1
@@ -407,7 +424,7 @@ def seperate_years(fileName, output):
 
     new_df.to_csv(output, encoding='utf-8', index = False)
     
-# Split by Species Functino - Did not end up using this in final analysis to get species count. 
+# Split by Species Function - Did not end up using this in final analysis. 
 def split_by_species(fileName):
     df = pd.read_csv(fileName)
     new_df = pd.DataFrame(columns=df.columns)
@@ -462,7 +479,6 @@ def summarize(fileName):
     sum_of_columns = df.sum(numeric_only=True)
     print(sum_of_columns)
     sum_df = pd.DataFrame(sum_of_columns).T
-    # df_sum = df.describe()
     sum_df.to_csv('df_summary.csv', encoding='utf-8', index = False)
 
 # Formatting years in the CSV files for analysis in R
@@ -517,7 +533,6 @@ def format_years(fileName, outputFile):
                 date = dates.group(2)
                 date = '19' + str(date)
                 date = int(date)
-                # print("AFTER:", date)
                 df.at[index, "DATE"] = date
                 continue 
 
@@ -527,7 +542,6 @@ def format_years(fileName, outputFile):
             date = dates5.group(1)
             date = '19' + str(date)
             date = int(date)
-            # print("AFTER:", date)
             df.at[index, "DATE"] = date
             continue 
 
